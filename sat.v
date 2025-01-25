@@ -15,6 +15,16 @@ Require Import FunInd.
 Require Import Coq.Init.Nat.
 From Hammer Require Import Tactics.
 
+Require Import Coq.FSets.FMapList.
+Require Import Coq.Structures.OrderedTypeEx.
+Require Import Coq.FSets.FMapFacts.
+Require Import Coq.FSets.FMapInterface.
+Require Import Coq.Structures.OrderedType.
+Require Import Coq.Arith.Peano_dec.
+Require Import Coq.Logic.FunctionalExtensionality.
+Require Import FMapAVL.
+
+Module SAT.
 
 Definition Finite A := {l : list A & Full l}.
 Definition EqDec A := forall n m : A, {n = m} + {n <> m}.
@@ -1556,7 +1566,7 @@ Defined.
 
 Definition CNF_to_Formula {A : Set} {S : Symbol A} (cnf : CNF) : Formula.
 induction cnf.
-exact FBottom.
+exact FTop.
 exact (And (Clause_to_Formula a) IHcnf).
 Defined.
 
@@ -2831,8 +2841,10 @@ Lemma unit_correctness2 (A : Set)
      [unit])
 (H3 : forall x : CLiteral,
      In x (unit :: c) ->
-     x <> unit -> partial_evaluate (CLiteral_to_Formula x) M = FBottom) :
-partial_evaluate (Clause_to_Formula c) (append M (get_symbol_cliteral unit) (Some (inverse unit))) = FTop.
+     x <> unit -> partial_evaluate (CLiteral_to_Formula x) M = FBottom) 
+:
+partial_evaluate (Clause_to_Formula c) (append M (get_symbol_cliteral unit) (Some (inverse unit)))
+ = FTop.
 induction c.
 inversion H0.
 inversion H0.
@@ -3015,256 +3027,268 @@ intros.
 by contradiction H0.
 Qed.
 
-rewrite IHc.
-sauto.
-
-have: partial_evaluate (Clause_to_Formula c)
-        (append M (get_symbol_cliteral unit) (Some (inverse unit))) = FTop.
-apply IHc.
-sauto.
-
-
-have : partial_evaluate (Clause_to_Formula (unit :: c)) M = partial_evaluate (Clause_to_Formula [unit]) M .
-
-rewrite <- (deletion_unit2 A S M c unit H1 H2).
-sauto.
-sauto.
-intros.
-simpl in *.
-
-remember (partial_evaluate (Clause_to_Formula c)
-  (append M (get_symbol_cliteral unit) (Some (inverse unit)))).
-
-destruct f.
-trivial.
-destruct c.
-inversion H0.
-subst.
-pose (deletion_unit2 A S M c0 unit H1).
-
-rewrite <- deletion_unit2 in Heqf.
-
-pose (sat_unit_is_always_true).
-
-
-induction c.
-inversion H0.
-inversion H0.
-
-
-
-
-
-
-admit.
-
-
 Theorem correctude_get_units_candidate 
   {A} {S : Symbol A} (c : Clause) (M : A -> option bool) u : 
     In u c -> get_units_candidate c M = Some u ->
     partial_evaluate (Clause_to_Formula c) (append M (get_symbol_cliteral u) (Some (inverse u))) = FTop.
 intros.
-
-
-have : filter (fun x : CLiteral => is_none (M (get_symbol_cliteral x))) c = [u].
-admit.
-intros.
-pose(fun y => unit_property2 _ _ _ y H0).
-have: M (get_symbol_cliteral u) = Some true.
-apply (unit_correctness _ _ M _ _ H).
+apply unit_correctness2.
+exact H.
+apply (unit_property1 c).
 assumption.
-intros.
-inversion H3.
-subst.
-by contradiction H4.
-pose (e _ H5 H4).
-destruct x.
-simpl in *.
-rewrite e0.
-trivial.
-simpl in *.
-rewrite e0.
-trivial.
-trivial.
-
-
+clear H.
 induction c.
-inversion H.
-inversion H.
-unfold get_units_candidate in H0.
-subst.
-remember (agroup_clauses (u :: c) M).
-destruct c0.
-destruct unassigned0.
 inversion H0.
+unfold get_units_candidate in H0.
+simpl in *.
+destruct a.
+remember (agroup_clauses c M).
+destruct c0.
+remember (M a).
+destruct o.
+destruct b.
+destruct unassigned0.
+congruence.
+destruct unassigned0.
+congruence.
+congruence.
+destruct unassigned0.
+congruence.
 destruct unassigned0.
 destruct top0.
+simpl.
+rewrite <- Heqo.
+simpl.
+apply IHc.
+unfold get_units_candidate.
+rewrite <- Heqc0.
+assumption.
+congruence.
+congruence.
+destruct unassigned0.
+destruct top0.
+simpl.
+remember (M a).
+destruct o.
+destruct b.
+congruence.
+congruence.
+simpl.
 injection H0.
 intros.
 subst.
-simpl in *.
+clear H0 IHc Heqo.
+have : forall x, In x c -> M (get_symbol_cliteral x) <> None.
+intros.
 pose (agroup_clause_classification c M).
 pose (agroup_clause_total c M).
-move : y y0.
-remember (agroup_clauses c M).
-intros.
-pose (y0 u).
-
-pose (y u).
-
-
-destruct c0.
-destruct u.
-remember (M a).
-destruct o.
-destruct b.
-simpl in *.
-rewrite <- Heqo.
-simpl.
-sauto.
-simpl.
-rewrite <- Heqo.
-simpl in *.
-destruct (y (CProp a)).
-
-
-injection Heqc0.
-congruence.
-injection Heqc0.
-intros.
-destruct (y u).
-have : M (get_symbol_cliteral u) = None.
+rewrite <- Heqc0 in y.
+rewrite <- Heqc0 in y0.
+destruct (y0 _ H).
+inversion H0.
+destruct H0.
+inversion H0.
 sauto.
 intros.
-congruence.
-simpl.
-injection Heqc0.
-intros.
-pose (fun x => agroup_clause_total c M x).
-have: forall x, In x c -> M (get_symbol_cliteral x) <> None.
-intros.
-pose (y0 x H4).
-move : y0 y1.
-rewrite <- Heqc1.
-intros.
-destruct (y x).
-destruct H6.
-destruct y1.
-sauto.
-sauto.
-intros.
-clear y0 H3 H2 H1 y IHc H Heqc0 Heqo Heqc1 unassigned0 top0 bottom0 bottom1 H0.
+clear Heqc0 Heqo0.
 induction c.
 trivial.
-have : M (get_symbol_cliteral a) <> None by sauto.
-intros.
-simpl in *.
-remember (M (get_symbol_cliteral a)).
-destruct o.
+have: M (get_symbol_cliteral a0) <> None.
+apply H.
+by left.
+move => H1.
 simpl.
-apply IHc.
-intros.
-apply H4.
-by right.
-by contradiction H.
-inversion H0.
-inversion H0.
-simpl in *.
-unfold get_units_candidate in H0.
-remember (M (get_symbol_cliteral a)).
+remember (M (get_symbol_cliteral a0)).
 destruct o.
 destruct b.
-sauto.
+simpl.
+apply IHc.
+intros.
+apply H.
+by right.
+apply IHc.
+intros.
+apply H.
+by right.
+congruence.
+congruence.
+congruence.
 simpl in *.
-rewrite <- Heqo in H0.
+remember (M a).
+destruct o.
+destruct b.
+simpl in *.
 remember (agroup_clauses c M).
 destruct c0.
 destruct unassigned0.
-inversion H0.
-destruct top0.
+congruence.
 destruct unassigned0.
+destruct top0.
 injection H0.
 intros.
 subst.
 apply IHc.
-assumption.
 unfold get_units_candidate.
-sauto.
-sauto.
-sauto.
-simpl in *.
-rewrite <- Heqo in H0.
+rewrite <- Heqc0.
+trivial.
+congruence.
+congruence.
 remember (agroup_clauses c M).
 destruct c0.
-destruct top0.
 destruct unassigned0.
+congruence.
+destruct unassigned0.
+congruence.
+congruence.
+remember (agroup_clauses c M).
+destruct c0.
+destruct unassigned0.
+destruct top0.
 injection H0.
 intros.
-subst.
-pose (fun x => agroup_clause_total c M x).
-pose (y _ H1).
+subst; simpl.
+clear H0 IHc Heqo.
+have : forall x, In x c -> M (get_symbol_cliteral x) <> None.
+intros.
 pose (agroup_clause_classification c M).
-move : y0 y1.
-rewrite <- Heqc0.
-intros.
-destruct y0.
-inversion H2.
-inversion H2.
-inversion H3.
-pose (y1 u).
-sauto.
-sauto.
+pose (agroup_clause_total c M).
+rewrite <- Heqc0 in y.
+rewrite <- Heqc0 in y0.
+destruct (y0 _ H).
+inversion H0.
+destruct H0.
+inversion H0.
 sauto.
 intros.
-pose(unit_property1 _ _ _ H0).
-pose(fun x y => unit_property2 _ _ _ x H0 y).
-have: M (get_symbol_cliteral u) = Some true.
-apply (unit_correctness _ _ M _ _ H).
-assumption.
+clear Heqc0.
+induction c.
+trivial.
+have: M (get_symbol_cliteral a0) <> None.
+apply H.
+by left.
+move => H1.
+simpl.
+remember (M (get_symbol_cliteral a0)).
+destruct o.
+destruct b.
+simpl.
+apply IHc.
 intros.
+apply H.
+by right.
+apply IHc.
+intros.
+apply H.
+by right.
+congruence.
+congruence.
+congruence.
+(******)
+intros.
+inversion H1.
+congruence.
+set ((fun y => unit_property2 _ _ _ y H0) x H3 H2).
 destruct x.
 simpl in *.
-inversion H2.
-congruence.
-pose (e0 (CProp a) H4 H3).
-rewrite e1.
+rewrite e.
 trivial.
-inversion H2.
-congruence.
-pose (e0 (CNeg a) H4 H3).
-simpl.
-rewrite e1.
 simpl in *.
-sauto.
+rewrite e.
+trivial.
+Qed.
 
-remember (M a).
-destruct o.
-
-Definition search_unit {A} {S : Symbol A} (cnf : CNF) (M : A -> option bool): option CLiteral.
+Definition search_pivot_clause {A} {S : Symbol A} (cnf : CNF) (M : A -> option bool): option CLiteral.
 induction cnf.
 exact None.
-destruct a.
-exact None.
-(*only one unassigned literal into the clause*)
 destruct (get_units_candidate a M).
-exact None.
-destruct l.
-exact (Some c0).
-exact None.
+exact (Some c).
+exact IHcnf.
 Defined.
 
-Theorem search_unit_is_correct : {A} {S : Symbol A} (cnf : CNF) (M : A -> option bool)
 
-Require Import Coq.FSets.FMapList.
-Require Import Coq.Structures.OrderedTypeEx.
-Require Coq.FSets.FMapFacts.
-Require Coq.FSets.FMapInterface.
-Require Import Coq.Structures.OrderedType.
-Require Import Coq.Arith.Peano_dec.
+Definition try_or {A} {S : Symbol A} (f : Formula) (f' : Formula) := 
+   match f, f' with
+       |FTop, _ => FTop
+       |_, FTop => FTop
+       |x, _ => x
+    end.
+
+Definition backtrack 
+  {A} {S : Symbol A} (f : Formula) (M : A -> option bool) (literals: list CLiteral) : Formula.
+induction literals.
+exact FBottom.
+exact (
+   try_or 
+    (partial_evaluate f (append M (get_symbol_cliteral a) (Some true)))
+    (partial_evaluate f (append M (get_symbol_cliteral a) (Some false)))).
+Defined.
+
+Definition is_pure_literal {A} {S : Symbol A} (c : Clause) (a : A) :=
+    {In (CProp a) c /\ ~ In (CNeg a) c} + {In (CNeg a) c /\ ~ In (CProp a) c}.
+
+Compute (fun x y => EqDec x).
+
+Definition sumbool_to_bool {A} {B} (x : {A} + {B}) : bool.
+destruct x.
+exact true.
+exact false.
+Defined.
+
+Theorem pure_literal_theorem {A} {S : Symbol A} (M : A -> option bool) (c : Clause) a (H : is_pure_literal c a)
+    : partial_evaluate (Clause_to_Formula c) (append M a (Some (sumbool_to_bool H))) = FTop.
+unfold is_pure_literal in H.
+induction c.
+sauto.
+destruct H.
+destruct a1.
+simpl in *.
+destruct i.
+subst.
+simpl in *.
+unfold append.
+remember (eq_dec a a).
+destruct s.
+simpl.
+trivial.
+sauto.
+have :  {In (CProp a) c /\ ~ In (CNeg a) c} + {In (CNeg a) c /\ ~ In (CProp a) c}.
+left.
+sauto.
+move => H2.
+set (IHc H2).
+simpl in *.
+destruct H2.
+rewrite e.
+by destruct (partial_evaluate (CLiteral_to_Formula a0) (append M a (Some true))).
+simpl in *.
+destruct a1.
+sauto.
+(*******)
+destruct a1.
+simpl in *.
+destruct i.
+subst.
+simpl in *.
+unfold append.
+remember (eq_dec a a).
+destruct s.
+simpl.
+trivial.
+sauto.
+have :  {In (CProp a) c /\ ~ In (CNeg a) c} + {In (CNeg a) c /\ ~ In (CProp a) c}.
+right.
+sauto.
+move => H2.
+set (IHc H2).
+destruct H2.
+sauto.
+rewrite e.
+by destruct (partial_evaluate (CLiteral_to_Formula a0) (append M a (Some false))).
+Qed.
+
 
 Module Type SymbolOrder.
  Parameter A : Set.
- Parameter S : Symbol A.
  Definition t := A.
  Definition eq := @eq t.
  Parameter Inline lt : t -> t -> Prop.
@@ -3277,8 +3301,11 @@ Module Type SymbolOrder.
  Parameter eq_dec : forall x y : t, { eq x y } + { ~ eq x y }.
 End SymbolOrder.
 
-Module Context (Import M: SymbolOrder).
-Module Import MNat := FMapList.Make(M).
+Axiom functional_extensionality : forall {A} {B : A -> Type}  (f g : forall x : A, B x),
+   (forall x, f x = g x) -> f = g.
+
+Module DLLP (Import M: SymbolOrder).
+Module Import MNat := FMapAVL.Make(M).
 Definition Context := MNat.t bool.
 Definition EmptyContext : Context := MNat.empty bool.
 
@@ -3286,22 +3313,16 @@ Inductive StepStatus {A} {S : Symbol A} :=
     |Stop : Context -> StepStatus
     |Continue : Context -> StepStatus.
 
-Definition get_ctx_from_step  {A} {S : Symbol A} (step : StepStatus) : Context.
+Definition get_ctx_from_step {S : Symbol A} (step : StepStatus) : Context.
 destruct step.
 exact c.
 exact c.
 Defined.
 
-Definition propagate (literal : @CLiteral _ M.S) (ctx : Context) : Context.
+Definition propagate {S : Symbol A} (literal : CLiteral) (ctx : Context) : Context.
 destruct literal.
 exact (MNat.add a true ctx).
 exact (MNat.add a false ctx).
-Defined.
-
-Definition step_unit (cnf : @CNF _ M.S) (ctx : Context) : @StepStatus _ M.S.
-destruct (search_unit cnf).
-exact (Continue (propagate c ctx)).
-exact (Stop ctx).
 Defined.
 
 Definition ContextMaps (ctx : Context) (k : M.t) : option bool.
@@ -3310,23 +3331,140 @@ exact (Some b).
 exact None.
 Defined.
 
-Theorem progagation_is_sound : forall (cnf : CNF) (ctx : Context), 
-  partial_evaluate (CNF_to_Formula cnf) (ContextMaps ctx) 
-    = partial_evaluate (CNF_to_Formula cnf) (ContextMaps (get_ctx_from_step (step_unit cnf ctx))).
+Definition step_unit {S : Symbol A} (cnf : CNF) (ctx : Context) : StepStatus.
+destruct (search_pivot_clause cnf (ContextMaps ctx)).
+exact (Continue (propagate c ctx)).
+exact (Stop ctx).
+Defined.
+
+
+Lemma append_ctx {S : Symbol A} (x : CLiteral) (ctx : Context)  : 
+    ContextMaps (propagate x ctx) = append (ContextMaps ctx) (get_symbol_cliteral x) (Some (inverse x)). 
 intros.
-unfold step_unit.
+apply functional_extensionality.
+intros.
+destruct x.
+simpl.
+unfold append.
+remember (SAT.eq_dec x0 a).
+destruct s.
+subst.
+simpl.
+pose (add_1 ctx true (erefl a)).
+pose(find_1 m).
+unfold ContextMaps.
+rewrite e.
+trivial.
+simpl.
+unfold ContextMaps.
+remember (find x0 (add a true ctx)).
+destruct o.
+symmetry in Heqo.
+pose (@find_2 _ (add a true ctx) x0 b Heqo).
+have : a <> x0 by firstorder.
+move => H3.
+pose(@add_3 _ ctx _ _ _ _ H3 m).
+remember (find x0 ctx).
+symmetry in Heqo0.
+destruct o.
+pose (@find_2 _ ctx _ _ Heqo0).
+destruct b.
+destruct b0.
+trivial.
+pose(find_1 m0).
+pose(find_1 m1).
+congruence.
+destruct b0.
+pose(find_1 m0).
+pose(find_1 m1).
+congruence.
+trivial.
+pose(find_1 m0).
+congruence.
+remember (find x0 ctx).
+destruct o.
+have : a <> x0 by firstorder.
+move => H3.
+symmetry in Heqo0.
+pose (@find_2 _ _ x0 b Heqo0).
+pose (@add_2 _ ctx _ _ _ true H3 m).
+pose(find_1 m).
+pose(find_1 m0).
+congruence.
+trivial.
+simpl.
+unfold append.
+remember (SAT.eq_dec x0 a).
+destruct s.
+subst.
+simpl.
+pose (add_1 ctx false (erefl a)).
+pose(find_1 m).
+unfold ContextMaps.
+rewrite e.
+trivial.
+simpl.
+unfold ContextMaps.
+remember (find x0 (add a false ctx)).
+destruct o.
+symmetry in Heqo.
+pose (@find_2 _ (add a false ctx) x0 b Heqo).
+have : a <> x0 by firstorder.
+move => H3.
+pose(@add_3 _ ctx _ _ _ _ H3 m).
+remember (find x0 ctx).
+symmetry in Heqo0.
+destruct o.
+pose (@find_2 _ ctx _ _ Heqo0).
+destruct b.
+destruct b0.
+trivial.
+pose(find_1 m0).
+pose(find_1 m1).
+congruence.
+destruct b0.
+pose(find_1 m0).
+pose(find_1 m1).
+congruence.
+trivial.
+pose(find_1 m0).
+congruence.
+remember (find x0 ctx).
+destruct o.
+have : a <> x0 by firstorder.
+move => H3.
+symmetry in Heqo0.
+pose (@find_2 _ _ x0 b Heqo0).
+pose (@add_2 _ ctx _ _ _ false H3 m).
+pose(find_1 m).
+pose(find_1 m0).
+congruence.
+trivial.
+Qed.
 
-remember (step_unit cnf ctx).
-destruct (step_unit cnf ctx).
+Definition backtrack 
+  {A} {S : Symbol A} (f : Formula) (M : A -> option bool) (literals: list CLiteral) : Formula.
+induction literals.
+exact FBottom.
+exact (
+   try_or 
+    (partial_evaluate f (append M (get_symbol_cliteral a) (Some true)))
+    (partial_evaluate f (append M (get_symbol_cliteral a) (Some false)))).
+Defined.
 
+End DLLP.
+End SAT.
 
-rewrite Heqs.
+Require Extraction.
 
-reflexivity.
+Extract Inductive unit => "unit" [ "()" ].
+Extract Inductive bool => "bool" [ "true" "false" ].
+Extract Inductive sumbool => "bool" [ "true" "false" ].
+Extract Inductive list => "list" [ "[]" "(::)" ].
+Extract Inductive prod => "(*)"  [ "(,)" ].
+Extract Inductive nat => int [ "0" "S" ] "(fun fO fS n -> if n=0 then fO () else fS (n-1))".
 
+Extraction SAT.
 
-(*** remove the false negation literal ***)
-
-exact IHcnf.
 
 
