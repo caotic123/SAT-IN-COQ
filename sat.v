@@ -3337,7 +3337,6 @@ exact (Continue (propagate c ctx)).
 exact (Stop ctx).
 Defined.
 
-
 Lemma append_ctx {S : Symbol A} (x : CLiteral) (ctx : Context)  : 
     ContextMaps (propagate x ctx) = append (ContextMaps ctx) (get_symbol_cliteral x) (Some (inverse x)). 
 intros.
@@ -3439,6 +3438,74 @@ pose (@add_2 _ ctx _ _ _ false H3 m).
 pose(find_1 m).
 pose(find_1 m0).
 congruence.
+trivial.
+Qed.
+
+Lemma DPLL_unit 
+  {S : Symbol A} (c : Clause) ctx u : 
+    get_units_candidate c (ContextMaps ctx) = Some u ->
+    partial_evaluate (Clause_to_Formula c) (ContextMaps (propagate u ctx)) = FTop.
+rewrite append_ctx.
+intros.
+rewrite correctude_get_units_candidate.
+induction c.
+inversion H.
+unfold get_units_candidate in H.
+simpl in *.
+destruct a.
+remember (agroup_clauses c (ContextMaps ctx)).
+destruct c0.
+remember (ContextMaps ctx a).
+destruct o.
+destruct b.
+destruct unassigned0.
+congruence.
+destruct unassigned0.
+congruence.
+congruence.
+destruct unassigned0.
+congruence.
+destruct unassigned0.
+destruct top0.
+injection H.
+intros.
+subst.
+right.
+apply IHc.
+unfold get_units_candidate.
+rewrite <- Heqc0.
+trivial.
+congruence.
+congruence.
+destruct unassigned0.
+destruct top0.
+injection H.
+sauto.
+sauto.
+sauto.
+remember (agroup_clauses c (ContextMaps ctx)).
+destruct c0.
+remember (ContextMaps ctx a).
+destruct o.
+destruct b.
+destruct unassigned0.
+congruence.
+destruct unassigned0.
+destruct top0.
+injection H.
+intros.
+right.
+apply IHc.
+unfold get_units_candidate.
+rewrite <- Heqc0.
+trivial.
+congruence.
+congruence.
+destruct unassigned0.
+congruence.
+sauto.
+sauto.
+assumption.
 trivial.
 Qed.
 
