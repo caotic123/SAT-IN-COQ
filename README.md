@@ -11,7 +11,7 @@ We may attack also SMT in the future.
 
 # Installing
 
-You need the (Coq)[https://coq.inria.fr/download] proof assistant to check the proofs, you also need (Coq hammer)[https://coqhammer.github.io/].
+You need the [Coq](https://coq.inria.fr/download) proof assistant to check the proofs, you also need [Coq hammer](https://coqhammer.github.io/).
 
 After you can check by using your terminal: coqc sat.v
 
